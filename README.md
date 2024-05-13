@@ -1,2 +1,0 @@
-# LateralTthinkingGame-LINEbot-YotuOmurice
-グループチャットでウミガメのスープができるLINEbot。サポーターズ主催のハッカソン2024vol.5で開発
