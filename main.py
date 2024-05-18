@@ -43,10 +43,15 @@ def callback():
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    # おうむ返し
-    line_bot_api.reply_message(
-        event.reply_token,
-        TextSendMessage(text=event.message.text))
+    send_message = event.message.text # 送られてきたメッセージ
+
+    # ゲーム開始
+    if send_message == "うみがめ開始":
+        mess = "ゲームを立ち上げました!\nKPが決まったら「KP決まった」と送信してください"
+        line_bot_api.reply_message(
+            event.reply_token,
+            [TextMessage(text=mess)]
+        )
 
 
 if __name__ == "__main__":
