@@ -45,6 +45,9 @@ def callback():
 def handle_message(event):
     send_message = event.message.text # 送られてきたメッセージ
 
+    # 時間管理
+
+
     # ゲーム開始
     if send_message == "うみがめ開始":
         mess = "ゲームを立ち上げました!\nKPが決まったら「KP決まった」と送信してください"
@@ -52,6 +55,14 @@ def handle_message(event):
             event.reply_token,
             [TextMessage(text=mess)]
         )
+
+    # KP確認＆問題提示
+
+
+    # 回答表示
+
+
+    # 個チャのやつ
 
 
 if __name__ == "__main__":
