@@ -88,7 +88,8 @@ def handle_message(event):
             mess = "問題を出題します\n\nKPは問題IDをうみがめくん個人チャットに入力して答えを取得してください。\n\n「ゲーム終了」と入力すると答えを表示してゲームを終了します"
             id = random.choice(list(questions.keys()))
             mess2 = f"質問を開始してください！"
-            id_title = f"問題ID:{id}\nタイトル:{questions[id]["title"]}"
+            title = questions[id]["title"]
+            id_title = f"問題ID:{id}\nタイトル:{title}"
             question = questions[id]["question"]
             line_bot_api.reply_message(
                 event.reply_token,
