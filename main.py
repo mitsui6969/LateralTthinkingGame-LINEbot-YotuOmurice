@@ -54,11 +54,12 @@ def callback():
 timer_duration = 0
 game_stated = False
 timer_set = False
+timer_running = False  # タイマーが実行中かどうかを追跡するためのフラグ
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     send_message = event.message.text.strip().lower() # 送られてきたメッセージ
-    global timer_duration, id, game_stated, timer_set
+    global timer_duration, id, game_stated, timer_set, timer_running
     
 
     ### グループの処理 ###
@@ -98,6 +99,7 @@ def handle_message(event):
                     [TextSendMessage(text=mess),TextSendMessage(text=id_title),TextSendMessage(text=question),TextSendMessage(text=mess2)]
                 )
                 if timer_set == True:
+                    timer_running = True
                     start_timer_event(event, timer_duration)
 
             # 答え表示
@@ -110,9 +112,10 @@ def handle_message(event):
                 )
                 game_stated = False
                 timer_set = False
+                timer_running = False
 
         else:
-            if send_message == "時間設定" or "ゲーム開始" or "ゲーム終了":
+            if send_message in [ "時間設定", "ゲーム開始", "ゲーム終了"]:
                 mess = "ゲームが開始されていません。\nゲームを開始するには「うみがめくん」と入力してください"
                 line_bot_api.reply_message(
                         event.reply_token,
@@ -157,8 +160,9 @@ def start_timer_event(event, duration):
         import time
         time.sleep(seconds)
         if seconds == duration * 60:
-            global game_stated
+            global game_stated, timer_running
             game_stated = False
+            timer_running = False
             answer = questions[id]["answer"]
             line_bot_api.push_message(
                 group_id,
