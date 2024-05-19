@@ -63,7 +63,7 @@ def handle_message(event):
     # ゲーム開始
     if send_message == "うみがめ開始":
         game_stated = True
-        mess = "ゲームを立ち上げました! KPを決めてください。\nKPが決まったら「ゲーム開始」と入力してください\nまた、時間を設定する場合は「時間設定」と入力してください。"
+        mess = "ゲームを立ち上げました! KPを決めてください。\nKPが決まったら「ゲーム開始」と入力すると問題が表示されます。\n「時間設定」と入力すると制限時間を設定することができます。"
         line_bot_api.reply_message(
             event.reply_token,
             [TextMessage(text=mess)]
@@ -75,7 +75,7 @@ def handle_message(event):
             time_selection(event)
         if send_message in ["10", "20", "30"]:
             timer_duration = int(send_message)
-            message_time = f"{timer_duration}分に決定しました！\nタイマーはゲーム開始と同時にスタートします\nゲームを開始するには「ゲーム開始」と入力してください"
+            message_time = f"{timer_duration}分に決定しました！\nタイマーはゲーム開始と同時にスタートします\n「ゲーム開始」と入力すると問題が表示されます"
             line_bot_api.reply_message(
                 event.reply_token,
                 [TextMessage(text=message_time)]
@@ -83,8 +83,9 @@ def handle_message(event):
 
         # 問題出題
         if send_message == "ゲーム開始":
-            mess = "問題を出題します"
+            mess = "問題を出題します\n\nKPは問題IDをうみがめくん個人チャットに入力して答えを取得してください。"
             id = random.choice(list(questions.keys()))
+            mess2 = f"問題IDは【{id}】です。\nそれでは質問を開始してください！\n「ゲーム終了」と入力すると答えを表示してゲームを終了します"
             question = questions[id]["question"]
             line_bot_api.reply_message(
                 event.reply_token,
@@ -93,7 +94,7 @@ def handle_message(event):
             start_timer_event(event, timer_duration)
 
         # 答え表示
-        if send_message == "答え":
+        if send_message == "ゲーム終了":
             mess = "答えです"
             answer = questions[id]["answer"]
             line_bot_api.reply_message(
@@ -125,6 +126,8 @@ def start_timer_event(event, duration):
         import time
         time.sleep(seconds)
         if seconds == duration * 60:
+            global game_stated
+            game_stated = False
             answer = questions[id]["answer"]
             line_bot_api.push_message(
                 user_id,
