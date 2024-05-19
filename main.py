@@ -157,4 +157,5 @@ def start_timer_event(event, duration):
 
 
 if __name__ == "__main__":
-    app.run()  # デプロイ環境
+    port = int(os.environ.get("PORT", 5000))
+    app.run(host="0.0.0.0", port=port)  # デプロイ環境
