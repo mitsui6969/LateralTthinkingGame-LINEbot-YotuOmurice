@@ -13,7 +13,7 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage,TemplateSendMessage, ButtonsTemplate, PostbackAction, PostbackEvent, TextSendMessage
+    MessageEvent, TextMessage, TextSendMessage,TemplateSendMessage, ButtonsTemplate, PostbackAction, PostbackEvent, TextSendMessage, SourceUser, SourceGroup, SourceRoom
 )
 
 import threading
@@ -61,60 +61,74 @@ def handle_message(event):
     global timer_duration, id, game_stated, timer_set
     
 
-    # ゲーム開始
-    if send_message == "うみがめくん":
-        game_stated = True
-        mess = "ゲームを立ち上げました! KPを決めてください。\nKPが決まったら「ゲーム開始」と入力すると問題が表示されます。\n「時間設定」と入力すると制限時間を設定することができます。"
-        line_bot_api.reply_message(
-            event.reply_token,
-            [TextMessage(text=mess)]
-        )
-
-    if game_stated == True:
-        # 時間設定
-        if send_message =="時間設定":
-            time_selection(event)
-        if send_message in ["10", "20", "30"]:
-            timer_duration = int(send_message)
-            message_time = f"{timer_duration}分に決定しました！\nタイマーはゲーム開始と同時にスタートします\n「ゲーム開始」と入力すると問題が表示されます"
+    ### グループの処理 ###
+    if isinstance(event.source, SourceGroup):
+        # ゲーム開始
+        if send_message == "うみがめくん":
+            game_stated = True
+            mess = "ゲームを立ち上げました! KPを決めてください。\nKPが決まったら「ゲーム開始」と入力すると問題が表示されます。\n「時間設定」と入力すると制限時間を設定することができます。"
             line_bot_api.reply_message(
                 event.reply_token,
-                [TextMessage(text=message_time)]
+                [TextMessage(text=mess)]
             )
-            timer_set = True
 
-        # 問題出題
-        if send_message == "ゲーム開始":
-            mess = "問題を出題します\n\nKPは問題IDをうみがめくん個人チャットに入力して答えを取得してください。\n\n「ゲーム終了」と入力すると答えを表示してゲームを終了します"
-            id = random.choice(list(questions.keys()))
-            mess2 = f"質問を開始してください！"
+        if game_stated == True:
+            # 時間設定
+            if send_message =="時間設定":
+                time_selection(event)
+            if send_message in ["10", "20", "30"]:
+                timer_duration = int(send_message)
+                message_time = f"{timer_duration}分に決定しました！\nタイマーはゲーム開始と同時にスタートします\n「ゲーム開始」と入力すると問題が表示されます"
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    [TextMessage(text=message_time)]
+                )
+                timer_set = True
+
+            # 問題出題
+            if send_message == "ゲーム開始":
+                mess = "問題を出題します\n\nKPは問題IDをうみがめくん個人チャットに入力して答えを取得してください。\n\n「ゲーム終了」と入力すると答えを表示してゲームを終了します"
+                id = random.choice(list(questions.keys()))
+                mess2 = f"質問を開始してください！"
+                title = questions[id]["title"]
+                id_title = f"問題ID:{id}\nタイトル:{title}"
+                question = questions[id]["question"]
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    [TextSendMessage(text=mess),TextSendMessage(text=id_title),TextSendMessage(text=question),TextSendMessage(text=mess2)]
+                )
+                if timer_set == True:
+                    start_timer_event(event, timer_duration)
+
+            # 答え表示
+            if send_message == "ゲーム終了":
+                mess = "答えです"
+                answer = questions[id]["answer"]
+                line_bot_api.reply_message(
+                    event.reply_token,
+                    [TextSendMessage(text=mess),TextSendMessage(text=answer)]
+                )
+                game_stated = False
+                timer_set = False
+
+        else:
+            mess = "ゲームが開始されていません。\nゲームを開始するには「うみがめくん」と入力してください"
+            line_bot_api.reply_message(
+                    event.reply_token,
+                    [TextSendMessage(text=mess)]
+                )
+
+    elif isinstance(event.source, SourceUser):
+        if send_message in questions.keys():
+            id = send_message
             title = questions[id]["title"]
-            id_title = f"問題ID:{id}\nタイトル:{title}"
-            question = questions[id]["question"]
-            line_bot_api.reply_message(
-                event.reply_token,
-                [TextSendMessage(text=mess),TextSendMessage(text=id_title),TextSendMessage(text=question),TextSendMessage(text=mess2)]
-            )
-            if timer_set == True:
-                start_timer_event(event, timer_duration)
-
-        # 答え表示
-        if send_message == "ゲーム終了":
-            mess = "答えです"
+            mess = f"タイトル「{title}」の答えです"
             answer = questions[id]["answer"]
             line_bot_api.reply_message(
                 event.reply_token,
                 [TextSendMessage(text=mess),TextSendMessage(text=answer)]
             )
-            game_stated = False
-            timer_set = False
 
-    else:
-        mess = "ゲームが開始されていません。\nゲームを開始するには「うみがめくん」と入力してください"
-        line_bot_api.reply_message(
-                event.reply_token,
-                [TextSendMessage(text=mess)]
-            )
 
 
 # 時間選択
@@ -143,4 +157,4 @@ def start_timer_event(event, duration):
 
 
 if __name__ == "__main__":
-    app.run()
+    app.run()  # デプロイ環境
