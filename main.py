@@ -111,12 +111,13 @@ def handle_message(event):
                 game_stated = False
                 timer_set = False
 
-        elif send_message == "時間設定" or "ゲーム開始" or "ゲーム終了":
-            mess = "ゲームが開始されていません。\nゲームを開始するには「うみがめくん」と入力してください"
-            line_bot_api.reply_message(
-                    event.reply_token,
-                    [TextSendMessage(text=mess)]
-                )
+        else:
+            if send_message == "時間設定" or "ゲーム開始" or "ゲーム終了":
+                mess = "ゲームが開始されていません。\nゲームを開始するには「うみがめくん」と入力してください"
+                line_bot_api.reply_message(
+                        event.reply_token,
+                        [TextSendMessage(text=mess)]
+                    )
 
     # 個人チャット
     if isinstance(event.source, SourceUser):
