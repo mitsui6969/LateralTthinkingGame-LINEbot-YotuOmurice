@@ -53,15 +53,16 @@ def callback():
 
 timer_duration = 0
 game_stated = False
+timer_set = False
 
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
     send_message = event.message.text.strip().lower() # 送られてきたメッセージ
-    global timer_duration, id, game_stated
+    global timer_duration, id, game_stated, timer_set
     
 
     # ゲーム開始
-    if send_message == "うみがめ開始":
+    if send_message == "うみがめくん":
         game_stated = True
         mess = "ゲームを立ち上げました! KPを決めてください。\nKPが決まったら「ゲーム開始」と入力すると問題が表示されます。\n「時間設定」と入力すると制限時間を設定することができます。"
         line_bot_api.reply_message(
@@ -80,18 +81,21 @@ def handle_message(event):
                 event.reply_token,
                 [TextMessage(text=message_time)]
             )
+            timer_set = True
 
         # 問題出題
         if send_message == "ゲーム開始":
-            mess = "問題を出題します\n\nKPは問題IDをうみがめくん個人チャットに入力して答えを取得してください。"
+            mess = "問題を出題します\n\nKPは問題IDをうみがめくん個人チャットに入力して答えを取得してください。\n\n「ゲーム終了」と入力すると答えを表示してゲームを終了します"
             id = random.choice(list(questions.keys()))
-            mess2 = f"問題IDは【{id}】です。\nそれでは質問を開始してください！\n「ゲーム終了」と入力すると答えを表示してゲームを終了します"
+            mess2 = f"質問を開始してください！"
+            id_title = f"問題ID:{id}\nタイトル:{questions[id]["title"]}"
             question = questions[id]["question"]
             line_bot_api.reply_message(
                 event.reply_token,
-                [TextSendMessage(text=mess),TextSendMessage(text=question)]
+                [TextSendMessage(text=mess),TextSendMessage(text=id_title),TextSendMessage(text=question),TextSendMessage(text=mess2)]
             )
-            start_timer_event(event, timer_duration)
+            if timer_set == True:
+                start_timer_event(event, timer_duration)
 
         # 答え表示
         if send_message == "ゲーム終了":
@@ -102,9 +106,10 @@ def handle_message(event):
                 [TextSendMessage(text=mess),TextSendMessage(text=answer)]
             )
             game_stated = False
+            timer_set = False
 
     else:
-        mess = "ゲームが開始されていません。\nゲームを開始するには「うみがめ開始」と入力してください"
+        mess = "ゲームが開始されていません。\nゲームを開始するには「うみがめくん」と入力してください"
         line_bot_api.reply_message(
                 event.reply_token,
                 [TextSendMessage(text=mess)]
