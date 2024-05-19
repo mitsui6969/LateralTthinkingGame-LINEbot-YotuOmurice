@@ -13,7 +13,7 @@ from linebot.exceptions import (
     InvalidSignatureError
 )
 from linebot.models import (
-    MessageEvent, TextMessage, TextSendMessage,TemplateSendMessage, ButtonsTemplate, PostbackAction, PostbackEvent, TextSendMessage, SourceUser, SourceGroup, SourceRoom
+    MessageEvent, TextMessage, TextSendMessage, TextSendMessage, SourceUser, SourceGroup, JoinEvent
 )
 
 import threading
@@ -129,6 +129,14 @@ def handle_message(event):
                 [TextSendMessage(text=mess),TextSendMessage(text=answer)]
             )
 
+@handler.add(JoinEvent)
+def handle_join(event):
+    greeting_message = "こんにちは！うみがめ問題ボットです。\nゲームを開始するには「うみがめくん」と入力してください。"
+    line_bot_api.reply_message(
+        event.reply_token,
+        TextSendMessage(text=greeting_message)
+    )
+
 
 
 # 時間選択
@@ -157,5 +165,6 @@ def start_timer_event(event, duration):
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)  # デプロイ環境
+    # port = int(os.environ.get("PORT", 5000))
+    # app.run(host="0.0.0.0", port=port)  # デプロイ環境
+    app.run()
