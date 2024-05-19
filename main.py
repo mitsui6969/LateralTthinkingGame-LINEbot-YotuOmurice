@@ -18,7 +18,8 @@ from linebot.models import (
 
 import threading
 
-import time
+import json
+import random
 
 timer_duration = 0
 
@@ -26,6 +27,10 @@ app = Flask(__name__)
 
 line_bot_api = LineBotApi(os.getenv('ACCESS_TOKEN'))
 handler = WebhookHandler(os.getenv('CHANNEL_SECRET'))
+
+# jsonファイル読み込み
+with open('./questions.json', 'r', encoding='utf-8') as json_file:
+    questions = json.load(json_file)
 
 
 @app.route("/callback", methods=['POST'])
@@ -46,65 +51,86 @@ def callback():
 
     return 'OK'
 
+timer_duration = 0
+game_stated = False
+
 @handler.add(MessageEvent, message=TextMessage)
 def handle_message(event):
-    send_message = event.message.text # 送られてきたメッセージ
-
-
+    send_message = event.message.text.strip().lower() # 送られてきたメッセージ
+    global timer_duration, id, game_stated
+    
 
     # ゲーム開始
-    if send_message == "うみがめ問題":
-        mess = "ゲームを立ち上げました! KPを決めてください。\n時間を設定する場合は「ゲーム時間設定」と入力してください。"
+    if send_message == "うみがめ開始":
+        game_stated = True
+        mess = "ゲームを立ち上げました! KPを決めてください。\nKPが決まったら「ゲーム開始」と入力してください\nまた、時間を設定する場合は「時間設定」と入力してください。"
         line_bot_api.reply_message(
             event.reply_token,
             [TextMessage(text=mess)]
         )
-    elif send_message =="ゲーム時間設定":
-        time_selection(event)
-    elif send_message in ["10","20","30"]:
-        global timer_duration
-        timer_duration = int(send_message)
-        message_time = f"{timer_duration}分に決定しました！\nタイマーを開始するときは「タイマー開始」を入力してください。"
-        line_bot_api.reply_message(
-            event.reply_token,
-            [TextMessage(text=message_time)]
-        )
-    elif send_message =="タイマー開始":
-        message_timer = "タイマーを開始します。"
-        line_bot_api.reply_message(
-            event.reply_token,
-            [TextMessage(text=message_timer)]
-        )
-        start_timer_event(event, timer_duration)
 
-    # 時間管理
+    if game_stated == True:
+        # 時間設定
+        if send_message =="時間設定":
+            time_selection(event)
+        if send_message in ["10", "20", "30"]:
+            timer_duration = int(send_message)
+            message_time = f"{timer_duration}分に決定しました！\nタイマーはゲーム開始と同時にスタートします\nゲームを開始するには「ゲーム開始」と入力してください"
+            line_bot_api.reply_message(
+                event.reply_token,
+                [TextMessage(text=message_time)]
+            )
+
+        # 問題出題
+        if send_message == "ゲーム開始":
+            mess = "問題を出題します"
+            id = random.choice(list(questions.keys()))
+            question = questions[id]["question"]
+            line_bot_api.reply_message(
+                event.reply_token,
+                [TextSendMessage(text=mess),TextSendMessage(text=question)]
+            )
+            start_timer_event(event, timer_duration)
+
+        # 答え表示
+        if send_message == "答え":
+            mess = "答えです"
+            answer = questions[id]["answer"]
+            line_bot_api.reply_message(
+                event.reply_token,
+                [TextSendMessage(text=mess),TextSendMessage(text=answer)]
+            )
+            game_stated = False
+
+    else:
+        mess = "ゲームが開始されていません。\nゲームを開始するには「うみがめ開始」と入力してください"
+        line_bot_api.reply_message(
+                event.reply_token,
+                [TextSendMessage(text=mess)]
+            )
+
+
+# 時間選択
 def time_selection(event):
-    message = "時間を決定してください。\n単位は分で決定しています。数字のみ記入してください。\n10分 \n20分 \n30分"
+    message = "制限時間を以下から選び入力してください。\n数字のみ記入してください。単位は分です。\n10分 \n20分 \n30分"
     line_bot_api.reply_message(
         event.reply_token,
         [TextMessage(text=message)]
     )
     
-def start_timer_event(event, timer_duration):
-    secounds = timer_duration * 60
-
+# タイマー機能
+def start_timer_event(event, duration):
+    secounds = duration * 60
     def timer_thread(user_id,seconds): 
+        import time
         time.sleep(seconds)
-        if seconds == timer_duration * 60:
+        if seconds == duration * 60:
+            answer = questions[id]["answer"]
             line_bot_api.push_message(
                 user_id,
-                [TextMessage(text=f"{timer_duration}分のタイマーが終了しました。")]
+                [TextMessage(text=f"{duration}分のタイマーが終了しました。答えを表示します"), TextSendMessage(text=answer)]
             )
     threading.Thread(target=timer_thread, args=(event.source.user_id,secounds)).start()
-
-       
-    # KP確認＆問題提示
-
-
-    # 回答表示
-
-
-    # 個チャのやつ
 
 
 if __name__ == "__main__":
