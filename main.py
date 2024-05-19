@@ -118,7 +118,8 @@ def handle_message(event):
                     [TextSendMessage(text=mess)]
                 )
 
-    elif isinstance(event.source, SourceUser):
+    # 個人チャット
+    if isinstance(event.source, SourceUser):
         if send_message in questions.keys():
             id = send_message
             title = questions[id]["title"]
@@ -129,6 +130,7 @@ def handle_message(event):
                 [TextSendMessage(text=mess),TextSendMessage(text=answer)]
             )
 
+## グループ加入時
 @handler.add(JoinEvent)
 def handle_join(event):
     greeting_message = "こんにちは！うみがめ問題ボットです。\nゲームを開始するには「うみがめくん」と入力してください。"
@@ -150,7 +152,7 @@ def time_selection(event):
 # タイマー機能
 def start_timer_event(event, duration):
     secounds = duration * 60
-    def timer_thread(user_id,seconds): 
+    def timer_thread(group_id,seconds): 
         import time
         time.sleep(seconds)
         if seconds == duration * 60:
@@ -158,12 +160,13 @@ def start_timer_event(event, duration):
             game_stated = False
             answer = questions[id]["answer"]
             line_bot_api.push_message(
-                user_id,
+                group_id,
                 [TextMessage(text=f"{duration}分のタイマーが終了しました。答えを表示します"), TextSendMessage(text=answer)]
             )
-    threading.Thread(target=timer_thread, args=(event.source.user_id,secounds)).start()
+    threading.Thread(target=timer_thread, args=(event.source.group_id,secounds)).start()
 
 
 if __name__ == "__main__":
-    port = int(os.environ.get("PORT", 5000))
-    app.run(host="0.0.0.0", port=port)  # デプロイ環境
+    # port = int(os.environ.get("PORT", 5000))
+    # app.run(host="0.0.0.0", port=port)  # デプロイ環境
+    app.run() # 開発環境
